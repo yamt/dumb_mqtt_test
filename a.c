@@ -59,6 +59,7 @@ xgetenv(const char *name) {
 
 int
 xgetenv_int(const char *name) {
+	// XXX better to use strtoul and check errors
 	return atoi(xgetenv(name));
 }
 
