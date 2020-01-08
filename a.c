@@ -43,6 +43,11 @@ on_message(struct mosquitto *m, void *v, const struct mosquitto_message *msg) {
 	// on_message, topic='devices/MySmartDevice/messages/devicebound/%24.to=%2Fdevices%2FMySmartDevice%2Fmessages%2FdeviceBound&foo=bar', qos=1, payload='hello'
 }
 
+static void
+on_log(struct mosquitto *m, void *v, int level, const char *msg) {
+	printf("on_log, level=%d, msg=%s\n", level, msg);
+}
+
 const char *
 xgetenv(const char *name) {
 	const char *v = getenv(name);
@@ -134,6 +139,7 @@ main(int argc, char **argv) {
 	mosquitto_publish_callback_set(m, on_publish);
 	mosquitto_subscribe_callback_set(m, on_subscribe);
 	mosquitto_message_callback_set(m, on_message);
+	mosquitto_log_callback_set(m, on_log);
 
 	rc = mosquitto_connect(m, host, port, 30);
 	if (rc != MOSQ_ERR_SUCCESS) {
