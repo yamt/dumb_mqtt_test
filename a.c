@@ -159,7 +159,7 @@ main(int argc, char **argv) {
 	char topic[1024]; // XXX
 	snprintf(topic, sizeof(topic), "$iothub/twin/GET/?$rid=%llu", request_id);
 	// XXX check snprintf failure
-	rc = mosquitto_publish(m, &mid, topic, 0, "", 1, false);
+	rc = mosquitto_publish(m, &mid, topic, 0, "", 0, false);
 	if (rc != MOSQ_ERR_SUCCESS) {
 		errx(1, "mosquitto_publish failed");
 	}
