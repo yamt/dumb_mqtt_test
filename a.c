@@ -128,6 +128,12 @@ on_message(struct mosquitto *m, void *v, const struct mosquitto_message *msg)
 			printf
 			    ("got a response for request id %llu, status %d\n",
 			    id, status);
+			// XXX check the status
+			if (req->callback) {
+				char *p0 = strndup(msg->payload, msg->payloadlen);
+				req->callback(req->id, req->callback_data, p0);
+				free(p0);
+			}
 			request_free(req);
 		}
 		return;
@@ -207,6 +213,67 @@ periodic_report(struct mosquitto *m)
 	printf("(report) mosquitto_publish mid=%d\n", mid);
 }
 
+struct global {
+	JSON_Value *desired;
+	JSON_Value *reported;
+} global;
+
+static void
+get_done(request_id_t id, void *_unused, void *payload)
+{
+	// on_message, topic='$iothub/twin/res/200/?$rid=hey', qos=0, payload='{"desired":{"myUselessProperty":"Happy New Year 2020!","$version":15},"reported":{"uselessReportedValue":1034,"$version":89}}'
+
+	JSON_Value *root = json_parse_string(payload);
+	if (root == NULL) {
+		goto bail;
+	}
+	JSON_Object *rootobj = json_value_get_object(root);
+	if (rootobj == NULL) {
+		goto bail;
+	}
+	JSON_Value *desired = json_object_get_value(rootobj, "desired");
+	JSON_Object *desiredobj = json_value_get_object(desired);
+	if (desiredobj == NULL) {
+		goto bail;
+	}
+	JSON_Value *reported = json_object_get_value(rootobj, "reported");
+	JSON_Object *reportedobj = json_value_get_object(reported);
+	if (reportedobj == NULL) {
+		goto bail;
+	}
+	desired = json_value_deep_copy(desired);
+	reported = json_value_deep_copy(reported);
+	if (desired && reported) {
+		json_value_free(global.desired);
+		global.desired = desired;
+		json_value_free(global.reported);
+		global.reported = reported;
+	} else {
+		json_value_free(desired);
+		json_value_free(reported);
+	}
+	json_value_free(root);
+	return;
+
+bail:
+	errx(1, "unexpected json: %s", payload);
+}
+
+static void
+dump_global()
+{
+	if (global.desired) {
+		char *p = json_serialize_to_string_pretty(global.desired);
+		printf("DESIRED: %s\n", p);
+		free(p);
+	}
+	if (global.reported) {
+		char *p = json_serialize_to_string_pretty(global.reported);
+		printf("REPORTED: %s\n", p);
+		free(p);
+	}
+}
+
 int
 main(int argc, char **argv)
 {
@@ -264,6 +331,7 @@ main(int argc, char **argv)
 	request_id_t request_id = request_id_alloc();
 	struct request *req = request_alloc();
 	req->id = request_id;
+	req->callback = get_done;
 	request_insert(req);
 	char topic[1024];	// XXX
 	snprintf(topic, sizeof(topic), "$iothub/twin/GET/?$rid=%llu",
@@ -282,6 +350,7 @@ main(int argc, char **argv)
 			    mosquitto_strerror(rc));
 		}
 		periodic_report(m);
+		dump_global();
 	}
 
 	errx(1, "should not reach here");
