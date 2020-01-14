@@ -95,6 +95,11 @@ parse_patch_payload(const char *payload0, size_t payloadlen) {
 	const char *payload;
 	JSON_Value *root;
 
+	if (global.desired == NULL) {
+		printf("Ignoring a PATCH before the initial GET response\n");
+		return 0;
+	}
+
 	payload = strndup(payload0, payloadlen);
 	root = json_parse_string(payload);
 	free((void *)payload); // discard const
