@@ -5,6 +5,8 @@
 
 #include <mosquitto.h>
 
+#include "req.h"
+
 static void
 on_connect(struct mosquitto *m, void *v, int rc) {
 	printf("on_connect, rc=%d (%s)\n", rc, mosquitto_strerror(rc));
@@ -26,6 +28,24 @@ on_subscribe(struct mosquitto *m, void *v, int mid, int qos_count,
 	printf("on_subscribe, mid=%d, qos_count=%d\n", mid, qos_count);
 }
 
+static int
+parse_response_topic(const char *topic, int *statusp, request_id_t *reqidp)
+{
+	// $iothub/twin/res/200/?$rid=request_id
+
+	// XXX
+	int status;
+	unsigned long long reqid;
+	int ret;
+	ret = sscanf(topic, "$iothub/twin/res/%d/?$rid=%llu", &status, &reqid);
+	if (ret != 2) {
+		return 1;
+	}
+	*statusp = status;
+	*reqidp = reqid;
+	return 0;
+}
+
 static void
 on_message(struct mosquitto *m, void *v, const struct mosquitto_message *msg) {
 	printf("on_message, topic='%s', qos=%d, payload='%.*s'\n", msg->topic, msg->qos, msg->payloadlen, msg->payload);
@@ -41,6 +61,20 @@ on_message(struct mosquitto *m, void *v, const struct mosquitto_message *msg) {
 	//
 	// "Message to device"
 	// on_message, topic='devices/MySmartDevice/messages/devicebound/%24.to=%2Fdevices%2FMySmartDevice%2Fmessages%2FdeviceBound&foo=bar', qos=1, payload='hello'
+
+	int status;
+	request_id_t id;
+	if (!parse_response_topic(msg->topic, &status, &id)) {
+		struct request *req = request_remove(id);
+		if (req == NULL) {
+			printf("unknown request id %llu\n", id);
+		} else {
+			printf("got a response for request id %llu, status %d\n", id, status);
+			request_free(req);
+		}
+	} else {
+		printf("unknown topic\n");
+	}
 }
 
 static void
@@ -63,13 +97,6 @@ xgetenv_int(const char *name) {
 	return atoi(xgetenv(name));
 }
 
-static unsigned long long
-get_request_id(void) {
-	static unsigned long long request_id = 10000;
-
-	return request_id++;
-}
-
 static void
 periodic_report(struct mosquitto *m) {
 	char topic[1024]; // XXX
@@ -90,7 +117,10 @@ periodic_report(struct mosquitto *m) {
 	}
 	last_report = now;
 
-	unsigned long long request_id = get_request_id();
+	request_id_t request_id = request_id_alloc();
+	struct request *req = request_alloc();
+	req->id = request_id;
+	request_insert(req);
 	// https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-mqtt-support#update-device-twins-reported-properties
 	snprintf(topic, sizeof(topic), "$iothub/twin/PATCH/properties/reported/?$rid=%llu", request_id);
 	// XXX check snprintf failure
@@ -155,7 +185,10 @@ main(int argc, char **argv) {
 	printf("mosquitto_subscribe mid=%d\n", mid);
 
 	// https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-mqtt-support#retrieving-a-device-twins-properties
-	unsigned long long request_id = get_request_id();
+	request_id_t request_id = request_id_alloc();
+	struct request *req = request_alloc();
+	req->id = request_id;
+	request_insert(req);
 	char topic[1024]; // XXX
 	snprintf(topic, sizeof(topic), "$iothub/twin/GET/?$rid=%llu", request_id);
 	// XXX check snprintf failure
