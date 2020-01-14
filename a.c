@@ -9,6 +9,26 @@
 
 #include "req.h"
 
+struct global {
+	JSON_Value *desired;
+	JSON_Value *reported;
+} global;
+
+static void
+dump_global()
+{
+	if (global.desired) {
+		char *p = json_serialize_to_string_pretty(global.desired);
+		printf("DESIRED: %s\n", p);
+		free(p);
+	}
+	if (global.reported) {
+		char *p = json_serialize_to_string_pretty(global.reported);
+		printf("REPORTED: %s\n", p);
+		free(p);
+	}
+}
+
 static void
 on_connect(struct mosquitto *m, void *v, int rc)
 {
@@ -82,14 +102,39 @@ parse_patch_payload(const char *payload0, size_t payloadlen) {
 	if (rootobj == NULL) {
 		goto bail;
 	}
-	size_t sz = json_object_get_count(rootobj);
-	unsigned int i;
-	for (i = 0; i < sz; i++) {
-		const char *name = json_object_get_name(rootobj, i);
-		JSON_Value *value = json_object_get_value_at(rootobj, i);
-		char *p = json_serialize_to_string_pretty(value);
-		printf("JSON %s=%s\n", name, p);
-		free(p);
+
+	JSON_Object *curobj = json_value_get_object(global.desired);
+	double curversion = json_object_get_number(curobj, "$version");
+	double version = json_object_get_number(rootobj, "$version");
+	if (version > curversion) {
+		// apply patch
+		size_t sz = json_object_get_count(rootobj);
+		unsigned int i;
+		for (i = 0; i < sz; i++) {
+			const char *name = json_object_get_name(rootobj, i);
+			if (name[0] == '$') { // skip $version, $metadata, etc
+				continue;
+			}
+			JSON_Value *value = json_object_get_value_at(rootobj, i);
+#if 1
+			char *p = json_serialize_to_string_pretty(value);
+			printf("JSON %s=%s\n", name, p);
+			free(p);
+#endif
+			if (json_value_get_type(value) == JSONNull) {
+				json_object_remove(curobj, name);
+			} else {
+				JSON_Value *newvalue = json_value_deep_copy(value);
+				if (newvalue == NULL) {
+					// XXX leaving partial update
+					goto bail;
+				}
+				json_object_set_value(curobj, name, newvalue);
+			}
+		}
+		dump_global();
+	} else {
+		printf("ignoring a stale update\n");
 	}
 
 	json_value_free(root);
@@ -213,11 +258,6 @@ periodic_report(struct mosquitto *m)
 	printf("(report) mosquitto_publish mid=%d\n", mid);
 }
 
-struct global {
-	JSON_Value *desired;
-	JSON_Value *reported;
-} global;
-
 static void
 get_done(request_id_t id, void *_unused, void *payload)
 {
@@ -253,25 +293,11 @@ get_done(request_id_t id, void *_unused, void *payload)
 		json_value_free(reported);
 	}
 	json_value_free(root);
+	dump_global();
 	return;
 
 bail:
 	errx(1, "unexpected json: %s", payload);
-}
-
-static void
-dump_global()
-{
-	if (global.desired) {
-		char *p = json_serialize_to_string_pretty(global.desired);
-		printf("DESIRED: %s\n", p);
-		free(p);
-	}
-	if (global.reported) {
-		char *p = json_serialize_to_string_pretty(global.reported);
-		printf("REPORTED: %s\n", p);
-		free(p);
-	}
 }
 
 int
@@ -350,7 +376,6 @@ main(int argc, char **argv)
 			    mosquitto_strerror(rc));
 		}
 		periodic_report(m);
-		dump_global();
 	}
 
 	errx(1, "should not reach here");
