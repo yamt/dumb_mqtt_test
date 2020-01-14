@@ -5,8 +5,7 @@ typedef unsigned long long request_id_t;
 
 request_id_t request_id_alloc();
 
-struct request
-{
+struct request {
 	TAILQ_ENTRY(request) q;
 	request_id_t id;
 	void (*callback)(request_id_t, void *, void *);

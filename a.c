@@ -80,7 +80,9 @@ parse_patch_topic(const char *topic, unsigned int *versionp)
 	// XXX maybe shouldn't use sscanf
 	unsigned int version;
 	int ret;
-	ret = sscanf(topic, "$iothub/twin/PATCH/properties/desired/?$version=%u", &version);
+	ret =
+	    sscanf(topic, "$iothub/twin/PATCH/properties/desired/?$version=%u",
+	    &version);
 	if (ret != 1) {
 		return 1;
 	}
@@ -89,7 +91,8 @@ parse_patch_topic(const char *topic, unsigned int *versionp)
 }
 
 static int
-parse_patch_payload(const char *payload0, size_t payloadlen) {
+parse_patch_payload(const char *payload0, size_t payloadlen)
+{
 	// on_message, topic='$iothub/twin/PATCH/properties/desired/?$version=15', qos=0, payload='{"myUselessProperty":"Happy New Year 2020!","$version":15}'
 
 	const char *payload;
@@ -102,7 +105,7 @@ parse_patch_payload(const char *payload0, size_t payloadlen) {
 
 	payload = strndup(payload0, payloadlen);
 	root = json_parse_string(payload);
-	free((void *)payload); // discard const
+	free((void *) payload);	// discard const
 	JSON_Object *rootobj = json_value_get_object(root);
 	if (rootobj == NULL) {
 		goto bail;
@@ -117,10 +120,11 @@ parse_patch_payload(const char *payload0, size_t payloadlen) {
 		unsigned int i;
 		for (i = 0; i < sz; i++) {
 			const char *name = json_object_get_name(rootobj, i);
-			if (name[0] == '$') { // skip $version, $metadata, etc
+			if (name[0] == '$') {	// skip $version, $metadata, etc
 				continue;
 			}
-			JSON_Value *value = json_object_get_value_at(rootobj, i);
+			JSON_Value *value =
+			    json_object_get_value_at(rootobj, i);
 #if 1
 			char *p = json_serialize_to_string_pretty(value);
 			printf("JSON %s=%s\n", name, p);
@@ -129,7 +133,8 @@ parse_patch_payload(const char *payload0, size_t payloadlen) {
 			if (json_value_get_type(value) == JSONNull) {
 				json_object_remove(curobj, name);
 			} else {
-				JSON_Value *newvalue = json_value_deep_copy(value);
+				JSON_Value *newvalue =
+				    json_value_deep_copy(value);
 				if (newvalue == NULL) {
 					// XXX leaving partial update
 					goto bail;
@@ -145,7 +150,7 @@ parse_patch_payload(const char *payload0, size_t payloadlen) {
 	json_value_free(root);
 	return 0;
 
-bail:
+      bail:
 	json_value_free(root);
 	return 1;
 }
@@ -180,7 +185,8 @@ on_message(struct mosquitto *m, void *v, const struct mosquitto_message *msg)
 			    id, status);
 			// XXX check the status
 			if (req->callback) {
-				char *p0 = strndup(msg->payload, msg->payloadlen);
+				char *p0 =
+				    strndup(msg->payload, msg->payloadlen);
 				req->callback(req->id, req->callback_data, p0);
 				free(p0);
 			}
@@ -189,7 +195,7 @@ on_message(struct mosquitto *m, void *v, const struct mosquitto_message *msg)
 		return;
 	}
 
-	unsigned int version; // XXX is int wide enough?
+	unsigned int version;	// XXX is int wide enough?
 	if (!parse_patch_topic(msg->topic, &version)) {
 		printf("got an update notification\n");
 		parse_patch_payload(msg->payload, msg->payloadlen);
@@ -301,7 +307,7 @@ get_done(request_id_t id, void *_unused, void *payload)
 	dump_global();
 	return;
 
-bail:
+      bail:
 	errx(1, "unexpected json: %s", payload);
 }
 
