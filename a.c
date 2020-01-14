@@ -67,7 +67,7 @@ on_message(struct mosquitto *m, void *v, const struct mosquitto_message *msg) {
 	if (!parse_response_topic(msg->topic, &status, &id)) {
 		struct request *req = request_remove(id);
 		if (req == NULL) {
-			printf("unknown request id %llu\n", id);
+			errx(1, "unknown request id %llu\n", id);
 		} else {
 			printf("got a response for request id %llu, status %d\n", id, status);
 			request_free(req);
