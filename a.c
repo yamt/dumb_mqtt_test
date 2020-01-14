@@ -1,9 +1,11 @@
 #include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #include <mosquitto.h>
+#include "parson.h"
 
 #include "req.h"
 
@@ -66,6 +68,38 @@ parse_patch_topic(const char *topic, unsigned int *versionp)
 	return 0;
 }
 
+static int
+parse_patch_payload(const char *payload0, size_t payloadlen) {
+	// on_message, topic='$iothub/twin/PATCH/properties/desired/?$version=15', qos=0, payload='{"myUselessProperty":"Happy New Year 2020!","$version":15}'
+
+	const char *payload;
+	JSON_Value *root;
+
+	payload = strndup(payload0, payloadlen);
+	root = json_parse_string(payload);
+	free((void *)payload); // discard const
+	JSON_Object *rootobj = json_value_get_object(root);
+	if (rootobj == NULL) {
+		goto bail;
+	}
+	size_t sz = json_object_get_count(rootobj);
+	unsigned int i;
+	for (i = 0; i < sz; i++) {
+		const char *name = json_object_get_name(rootobj, i);
+		JSON_Value *value = json_object_get_value_at(rootobj, i);
+		char *p = json_serialize_to_string_pretty(value);
+		printf("JSON %s=%s\n", name, p);
+		free(p);
+	}
+
+	json_value_free(root);
+	return 0;
+
+bail:
+	json_value_free(root);
+	return 1;
+}
+
 static void
 on_message(struct mosquitto *m, void *v, const struct mosquitto_message *msg)
 {
@@ -102,6 +136,7 @@ on_message(struct mosquitto *m, void *v, const struct mosquitto_message *msg)
 	unsigned int version; // XXX is int wide enough?
 	if (!parse_patch_topic(msg->topic, &version)) {
 		printf("got an update notification\n");
+		parse_patch_payload(msg->payload, msg->payloadlen);
 		return;
 	}
 
