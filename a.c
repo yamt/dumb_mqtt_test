@@ -120,9 +120,11 @@ parse_patch_payload(const char *payload0, size_t payloadlen)
 		unsigned int i;
 		for (i = 0; i < sz; i++) {
 			const char *name = json_object_get_name(rootobj, i);
+#if 0
 			if (name[0] == '$') {	// skip $version, $metadata, etc
 				continue;
 			}
+#endif
 			JSON_Value *value =
 			    json_object_get_value_at(rootobj, i);
 #if 1
