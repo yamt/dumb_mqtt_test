@@ -8,28 +8,32 @@
 #include "req.h"
 
 static void
-on_connect(struct mosquitto *m, void *v, int rc) {
+on_connect(struct mosquitto *m, void *v, int rc)
+{
 	printf("on_connect, rc=%d (%s)\n", rc, mosquitto_strerror(rc));
 }
 
 static void
-on_disconnect(struct mosquitto *m, void *v, int rc) {
+on_disconnect(struct mosquitto *m, void *v, int rc)
+{
 	printf("on_disconnect, rc=%d (%s)\n", rc, mosquitto_strerror(rc));
 }
 
 static void
-on_publish(struct mosquitto *m, void *v, int mid) {
+on_publish(struct mosquitto *m, void *v, int mid)
+{
 	printf("on_publish, mid=%d\n", mid);
 }
 
 static void
 on_subscribe(struct mosquitto *m, void *v, int mid, int qos_count,
-		const int *granted_qos) {
+    const int *granted_qos)
+{
 	printf("on_subscribe, mid=%d, qos_count=%d\n", mid, qos_count);
 }
 
 static int
-parse_response_topic(const char *topic, int *statusp, request_id_t *reqidp)
+parse_response_topic(const char *topic, int *statusp, request_id_t * reqidp)
 {
 	// $iothub/twin/res/200/?$rid=request_id
 
@@ -47,8 +51,10 @@ parse_response_topic(const char *topic, int *statusp, request_id_t *reqidp)
 }
 
 static void
-on_message(struct mosquitto *m, void *v, const struct mosquitto_message *msg) {
-	printf("on_message, topic='%s', qos=%d, payload='%.*s'\n", msg->topic, msg->qos, msg->payloadlen, msg->payload);
+on_message(struct mosquitto *m, void *v, const struct mosquitto_message *msg)
+{
+	printf("on_message, topic='%s', qos=%d, payload='%.*s'\n", msg->topic,
+	    msg->qos, msg->payloadlen, msg->payload);
 
 	// GET response
 	// on_message, topic='$iothub/twin/res/200/?$rid=hey', qos=0, payload='{"desired":{"myUselessProperty":"Happy New Year 2020!","$version":15},"reported":{"uselessReportedValue":1034,"$version":89}}'
@@ -69,7 +75,9 @@ on_message(struct mosquitto *m, void *v, const struct mosquitto_message *msg) {
 		if (req == NULL) {
 			errx(1, "unknown request id %llu\n", id);
 		} else {
-			printf("got a response for request id %llu, status %d\n", id, status);
+			printf
+			    ("got a response for request id %llu, status %d\n",
+			    id, status);
 			request_free(req);
 		}
 	} else {
@@ -78,12 +86,14 @@ on_message(struct mosquitto *m, void *v, const struct mosquitto_message *msg) {
 }
 
 static void
-on_log(struct mosquitto *m, void *v, int level, const char *msg) {
+on_log(struct mosquitto *m, void *v, int level, const char *msg)
+{
 	printf("on_log, level=%d, msg=%s\n", level, msg);
 }
 
 const char *
-xgetenv(const char *name) {
+xgetenv(const char *name)
+{
 	const char *v = getenv(name);
 	if (v == NULL) {
 		errx(1, "%s is not set", name);
@@ -92,15 +102,17 @@ xgetenv(const char *name) {
 }
 
 int
-xgetenv_int(const char *name) {
+xgetenv_int(const char *name)
+{
 	// XXX better to use strtoul and check errors
 	return atoi(xgetenv(name));
 }
 
 static void
-periodic_report(struct mosquitto *m) {
-	char topic[1024]; // XXX
-	char payload[1024]; // XXX
+periodic_report(struct mosquitto *m)
+{
+	char topic[1024];	// XXX
+	char payload[1024];	// XXX
 	ssize_t payloadlen;
 	int mid;
 	int rc;
@@ -122,9 +134,12 @@ periodic_report(struct mosquitto *m) {
 	req->id = request_id;
 	request_insert(req);
 	// https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-mqtt-support#update-device-twins-reported-properties
-	snprintf(topic, sizeof(topic), "$iothub/twin/PATCH/properties/reported/?$rid=%llu", request_id);
+	snprintf(topic, sizeof(topic),
+	    "$iothub/twin/PATCH/properties/reported/?$rid=%llu", request_id);
 	// XXX check snprintf failure
-	payloadlen = snprintf(payload, sizeof(payload), "{ \"uselessReportedValue\": %d }", useless_value++);
+	payloadlen =
+	    snprintf(payload, sizeof(payload),
+	    "{ \"uselessReportedValue\": %d }", useless_value++);
 	// XXX check snprintf failure
 	printf("report topic=%s, payload=%s\n", topic, payload);
 	rc = mosquitto_publish(m, &mid, topic, payloadlen, payload, 0, false);
@@ -135,7 +150,8 @@ periodic_report(struct mosquitto *m) {
 }
 
 int
-main(int argc, char **argv) {
+main(int argc, char **argv)
+{
 	// XXX should not hardcode
 	const char *host = xgetenv("MQTT_HOST");
 	const int port = xgetenv_int("MQTT_PORT");
@@ -161,9 +177,11 @@ main(int argc, char **argv) {
 	if (rc != MOSQ_ERR_SUCCESS) {
 		errx(1, "mosquitto_username_pw_set failed");
 	}
-	rc = mosquitto_int_option(m, MOSQ_OPT_PROTOCOL_VERSION, MQTT_PROTOCOL_V311);
+	rc = mosquitto_int_option(m, MOSQ_OPT_PROTOCOL_VERSION,
+	    MQTT_PROTOCOL_V311);
 	if (rc != MOSQ_ERR_SUCCESS) {
-		errx(1, "mosquitto_int_option MOSQ_OPT_PROTOCOL_VERSION failed");
+		errx(1,
+		    "mosquitto_int_option MOSQ_OPT_PROTOCOL_VERSION failed");
 	}
 	mosquitto_connect_callback_set(m, on_connect);
 	mosquitto_disconnect_callback_set(m, on_disconnect);
@@ -189,8 +207,9 @@ main(int argc, char **argv) {
 	struct request *req = request_alloc();
 	req->id = request_id;
 	request_insert(req);
-	char topic[1024]; // XXX
-	snprintf(topic, sizeof(topic), "$iothub/twin/GET/?$rid=%llu", request_id);
+	char topic[1024];	// XXX
+	snprintf(topic, sizeof(topic), "$iothub/twin/GET/?$rid=%llu",
+	    request_id);
 	// XXX check snprintf failure
 	rc = mosquitto_publish(m, &mid, topic, 0, "", 0, false);
 	if (rc != MOSQ_ERR_SUCCESS) {
@@ -201,7 +220,8 @@ main(int argc, char **argv) {
 	for (;;) {
 		rc = mosquitto_loop(m, -1, 1);
 		if (rc != MOSQ_ERR_SUCCESS) {
-			errx(1, "mosquitto_loop rc=%d (%s)\n", rc, mosquitto_strerror(rc));
+			errx(1, "mosquitto_loop rc=%d (%s)\n", rc,
+			    mosquitto_strerror(rc));
 		}
 		periodic_report(m);
 	}

@@ -3,34 +3,41 @@
 
 #include "req.h"
 
-static TAILQ_HEAD(, request) reqq = TAILQ_HEAD_INITIALIZER(reqq);
+static
+TAILQ_HEAD(, request)
+    reqq = TAILQ_HEAD_INITIALIZER(reqq);
 
 request_id_t
-request_id_alloc() {
+request_id_alloc()
+{
 	static request_id_t request_id = 10000;
 
 	return request_id++;
 }
 
 struct request *
-request_alloc() {
+request_alloc()
+{
 	struct request *req = malloc(sizeof(*req));
 
 	return req;
 }
 
 void
-request_free(struct request *req) {
+request_free(struct request *req)
+{
 	free(req);
 }
 
 void
-request_insert(struct request *req) {
+request_insert(struct request *req)
+{
 	TAILQ_INSERT_TAIL(&reqq, req, q);
 }
 
 struct request *
-request_remove(request_id_t id) {
+request_remove(request_id_t id)
+{
 	struct request *req;
 
 	TAILQ_FOREACH(req, &reqq, q) {
