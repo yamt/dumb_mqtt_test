@@ -37,7 +37,7 @@ parse_response_topic(const char *topic, int *statusp, request_id_t * reqidp)
 {
 	// $iothub/twin/res/200/?$rid=request_id
 
-	// XXX
+	// XXX maybe shouldn't use sscanf
 	int status;
 	unsigned long long reqid;
 	int ret;
@@ -47,6 +47,22 @@ parse_response_topic(const char *topic, int *statusp, request_id_t * reqidp)
 	}
 	*statusp = status;
 	*reqidp = reqid;
+	return 0;
+}
+
+static int
+parse_patch_topic(const char *topic, unsigned int *versionp)
+{
+	// on_message, topic='$iothub/twin/PATCH/properties/desired/?$version=15', qos=0, payload='{"myUselessProperty":"Happy New Year 2020!","$version":15}'
+
+	// XXX maybe shouldn't use sscanf
+	unsigned int version;
+	int ret;
+	ret = sscanf(topic, "$iothub/twin/PATCH/properties/desired/?$version=%u", &version);
+	if (ret != 1) {
+		return 1;
+	}
+	*versionp = version;
 	return 0;
 }
 
@@ -80,9 +96,16 @@ on_message(struct mosquitto *m, void *v, const struct mosquitto_message *msg)
 			    id, status);
 			request_free(req);
 		}
-	} else {
-		printf("unknown topic\n");
+		return;
 	}
+
+	unsigned int version; // XXX is int wide enough?
+	if (!parse_patch_topic(msg->topic, &version)) {
+		printf("got an update notification\n");
+		return;
+	}
+
+	printf("unknown topic\n");
 }
 
 static void
