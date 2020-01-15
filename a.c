@@ -448,7 +448,6 @@ main(int argc, char **argv)
 	const char *deviceid = xgetenv("DEVICEID");
 	const char *username = xgetenv("USERNAME");
 	const char *password = xgetenv("PASSWORD");
-	const char *sub = xgetenv("SUB");
 
 	struct mosquitto *m;
 	int rc;
@@ -485,7 +484,12 @@ main(int argc, char **argv)
 	}
 	int mid;
 	int qos = 1;
-	rc = mosquitto_subscribe(m, &mid, sub, qos);
+	rc = mosquitto_subscribe(m, &mid,
+	    "$iothub/twin/PATCH/properties/desired/#", qos);
+	if (rc != MOSQ_ERR_SUCCESS) {
+		errx(1, "mosquitto_subscribe failed");
+	}
+	rc = mosquitto_subscribe(m, &mid, "$iothub/twin/res/#", qos);
 	if (rc != MOSQ_ERR_SUCCESS) {
 		errx(1, "mosquitto_subscribe failed");
 	}
