@@ -25,11 +25,6 @@ dump_global()
 		printf("DESIRED: %s\n", p);
 		free(p);
 	}
-	if (global.reported) {
-		char *p = json_serialize_to_string_pretty(global.reported);
-		printf("REPORTED: %s\n", p);
-		free(p);
-	}
 	if (global.current) {
 		char *p = json_serialize_to_string_pretty(global.current);
 		printf("CURRENT: %s\n", p);
@@ -244,13 +239,14 @@ static void
 periodic_report(struct mosquitto *m)
 {
 	char topic[1024];	// XXX
-	char payload[1024];	// XXX
-	ssize_t payloadlen;
 	int mid;
 	int rc;
 
 	static time_t last_report;
-	static int useless_value = 1000;
+
+	if (global.current == NULL) {
+		return;
+	}
 
 	if (!last_report) {
 		last_report = time(NULL);
@@ -269,12 +265,12 @@ periodic_report(struct mosquitto *m)
 	snprintf(topic, sizeof(topic),
 	    "$iothub/twin/PATCH/properties/reported/?$rid=%llu", request_id);
 	// XXX check snprintf failure
-	payloadlen =
-	    snprintf(payload, sizeof(payload),
-	    "{ \"uselessReportedValue\": %d }", useless_value++);
-	// XXX check snprintf failure
+
+	char *payload = json_serialize_to_string(global.current);
+	size_t payloadlen = strlen(payload);
 	printf("report topic=%s, payload=%s\n", topic, payload);
 	rc = mosquitto_publish(m, &mid, topic, payloadlen, payload, 0, false);
+	json_free_serialized_string(payload);
 	if (rc != MOSQ_ERR_SUCCESS) {
 		errx(1, "mosquitto_publish failed");
 	}
