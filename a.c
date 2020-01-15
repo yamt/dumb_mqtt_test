@@ -323,13 +323,13 @@ static void
 reconcile()
 {
 	/*
-	 *	{
-	 *		"test": {
-	 *			"version": "1",
-	 *			"url": "https://www.midokura.com/wp-content/themes/midokura2k14/images/hw_logo.png",
-	 *			"sha256": "0875928fb0c8b838d69e1f8db7fa11cfe4b27a946477a35b6022f8b6d9db5e74"
-	 *		}
-	 *	}
+	 *      {
+	 *              "test": {
+	 *                      "version": "1",
+	 *                      "url": "https://www.midokura.com/wp-content/themes/midokura2k14/images/hw_logo.png",
+	 *                      "sha256": "0875928fb0c8b838d69e1f8db7fa11cfe4b27a946477a35b6022f8b6d9db5e74"
+	 *              }
+	 *      }
 	 */
 	const char *key = "test";
 	const char *verkey = "version";
@@ -349,7 +349,9 @@ reconcile()
 	if (desired == NULL) {
 		return;
 	}
-	char *p = json_serialize_to_string_pretty(json_object_get_wrapping_value(desired));
+	char *p =
+	    json_serialize_to_string_pretty(json_object_get_wrapping_value
+	    (desired));
 	printf("reconcile to: %s\n", p);
 	free(p);
 #endif
@@ -371,7 +373,7 @@ reconcile()
 	printf("sha256: %s\n", sha256);
 
 	// XXX the following process should be non-blocking
-	size_t bufsize = 10000; // XXX
+	size_t bufsize = 10000;	// XXX
 	void *buf = malloc(bufsize);
 	if (buf == NULL) {
 		err(1, "malloc");
@@ -381,7 +383,9 @@ reconcile()
 	if (current == NULL) {
 		new = json_value_init_object();
 	} else {
-		new = json_value_deep_copy(json_object_get_wrapping_value(current));
+		new =
+		    json_value_deep_copy(json_object_get_wrapping_value
+		    (current));
 	}
 	if (new == NULL) {
 		err(1, "malloc");
@@ -395,7 +399,7 @@ reconcile()
 		goto report;
 	}
 	unsigned char hash[32];
-	char hashstr[32*2+1];
+	char hashstr[32 * 2 + 1];
 	printf("downloaded successfully\n");
 	SHA256_CTX c;
 	SHA256_Init(&c);
