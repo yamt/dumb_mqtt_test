@@ -185,7 +185,9 @@ on_message(struct mosquitto *m, void *v, const struct mosquitto_message *msg)
 			printf
 			    ("got a response for request id %llu, status %d\n",
 			    id, status);
-			// XXX check the status
+			if (status / 100 * 100 != 200) {
+				errx(1, "unexpected status %d\n", status);
+			}
 			if (req->callback) {
 				char *p0 =
 				    strndup(msg->payload, msg->payloadlen);
