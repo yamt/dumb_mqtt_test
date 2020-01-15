@@ -5,13 +5,16 @@
 #include <time.h>
 
 #include <mosquitto.h>
+#include <openssl/sha.h>
 #include "parson.h"
 
 #include "req.h"
+#include "fetcher.h"
 
 struct global {
 	JSON_Value *desired;
 	JSON_Value *reported;
+	JSON_Value *current;
 } global;
 
 static void
@@ -25,6 +28,11 @@ dump_global()
 	if (global.reported) {
 		char *p = json_serialize_to_string_pretty(global.reported);
 		printf("REPORTED: %s\n", p);
+		free(p);
+	}
+	if (global.current) {
+		char *p = json_serialize_to_string_pretty(global.current);
+		printf("CURRENT: %s\n", p);
 		free(p);
 	}
 }
@@ -315,6 +323,121 @@ bail:
 	errx(1, "unexpected json: %s", payload);
 }
 
+static void
+reconcile()
+{
+	/*
+	 *	{
+	 *		"test": {
+	 *			"version": "1",
+	 *			"url": "https://www.midokura.com/wp-content/themes/midokura2k14/images/hw_logo.png",
+	 *			"sha256": "0875928fb0c8b838d69e1f8db7fa11cfe4b27a946477a35b6022f8b6d9db5e74"
+	 *		}
+	 *	}
+	 */
+	const char *key = "test";
+	const char *verkey = "version";
+	const char *urlkey = "url";
+	const char *sha256key = "sha256";
+	const char *statuskey = "status";
+
+	JSON_Object *desiredobj = json_value_get_object(global.desired);
+	JSON_Object *currentobj = json_value_get_object(global.current);
+	JSON_Object *desired = json_object_get_object(desiredobj, key);
+	JSON_Object *current = json_object_get_object(currentobj, key);
+
+	const char *ver = json_object_get_string(desired, verkey);
+	const char *curver = json_object_get_string(current, verkey);
+
+#if 0
+	if (desired == NULL) {
+		return;
+	}
+	char *p = json_serialize_to_string_pretty(json_object_get_wrapping_value(desired));
+	printf("reconcile to: %s\n", p);
+	free(p);
+#endif
+
+	if (ver == NULL) {
+		return;
+	}
+	if (curver != NULL && !strcmp(ver, curver)) {
+		return;
+	}
+
+	const char *url = json_object_get_string(desired, urlkey);
+	const char *sha256 = json_object_get_string(desired, sha256key);
+	if (url == NULL || sha256 == NULL) {
+		return;
+	}
+
+	printf("url: %s\n", url);
+	printf("sha256: %s\n", sha256);
+
+	// XXX the following process should be non-blocking
+	size_t bufsize = 10000; // XXX
+	void *buf = malloc(bufsize);
+	if (buf == NULL) {
+		err(1, "malloc");
+	}
+	JSON_Value *new;
+	JSON_Object *newobj;
+	if (current == NULL) {
+		new = json_value_init_object();
+	} else {
+		new = json_value_deep_copy(json_object_get_wrapping_value(current));
+	}
+	if (new == NULL) {
+		err(1, "malloc");
+	}
+	newobj = json_value_get_object(new);
+	FILE *fp = fmemopen(buf, bufsize, "w");
+	if (fetch(url, NULL, fp)) {
+		warnx("fetch failure");
+		fclose(fp);
+		json_object_set_string(newobj, statuskey, "fetch failed");
+		goto report;
+	}
+	unsigned char hash[32];
+	char hashstr[32*2+1];
+	printf("downloaded successfully\n");
+	SHA256_CTX c;
+	SHA256_Init(&c);
+	SHA256_Update(&c, buf, ftell(fp));
+	SHA256_Final(hash, &c);
+
+	int i;
+	for (i = 0; i < sizeof(hash); i++) {
+		sprintf(hashstr + i * 2, "%02x", hash[i]);
+	}
+	printf("computed hash: %s\n", hashstr);
+	if (strcmp(hashstr, sha256)) {
+		fclose(fp);
+		printf("hash mismatch: %s != %s\n", hashstr, sha256);
+		json_object_set_string(newobj, statuskey, "hash mismatch");
+		goto report;
+	}
+
+	printf("hash is ok\n");
+
+	// XXX do something meaningful with the downloaded blob
+	fclose(fp);
+
+	// report success
+	json_object_set_string(newobj, verkey, ver);
+	json_object_set_string(newobj, statuskey, "ok");
+report:
+	if (global.current == NULL) {
+		global.current = json_value_init_object();
+		if (global.current == NULL) {
+			errx(1, "json_value_init_object");
+		}
+	}
+	json_object_set_value(json_value_get_object(global.current), key, new);
+	dump_global();
+	return;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -390,6 +513,7 @@ main(int argc, char **argv)
 			errx(1, "mosquitto_loop rc=%d (%s)\n", rc,
 			    mosquitto_strerror(rc));
 		}
+		reconcile();
 		periodic_report(m);
 	}
 
