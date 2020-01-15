@@ -1,8 +1,8 @@
-what this does
+What this does
 --------------
 
-* Connect to Azure via MQTT and watch device twins
-* If someone put a "test" object like the following in the device twins,
+Connect to Azure via MQTT and watch the device twins.
+If someone put a "test" object like the following in the device twins,
 
 	"desired": {
 		"test": {
@@ -12,9 +12,9 @@ what this does
 		}
 	}
 
-* This program downloads the blob from the given url and
-  verify sha256 hash of it.
-* And then report the success by updating the "reported" property.
+This program downloads the blob from the given url and
+verify sha256 hash of it.
+And then report the success by updating the "reported" property.
 
 	"reported": {
 		"test": {
@@ -23,7 +23,7 @@ what this does
 		}
 	}
 
-* Or, an error like the following:
+Or, an error like the following.
 
 	"reported": {
 		"test": {
