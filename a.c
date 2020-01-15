@@ -23,12 +23,12 @@ dump_global()
 	if (global.desired) {
 		char *p = json_serialize_to_string_pretty(global.desired);
 		printf("DESIRED: %s\n", p);
-		free(p);
+		json_free_serialized_string(p);
 	}
 	if (global.current) {
 		char *p = json_serialize_to_string_pretty(global.current);
 		printf("CURRENT: %s\n", p);
-		free(p);
+		json_free_serialized_string(p);
 	}
 }
 
@@ -133,7 +133,7 @@ parse_patch_payload(const char *payload0, size_t payloadlen)
 #if 1
 			char *p = json_serialize_to_string_pretty(value);
 			printf("JSON %s=%s\n", name, p);
-			free(p);
+			json_free_serialized_string(p);
 #endif
 			if (json_value_get_type(value) == JSONNull) {
 				json_object_remove(curobj, name);
