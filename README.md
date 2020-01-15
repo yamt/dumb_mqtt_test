@@ -31,3 +31,25 @@ Or, an error like the following.
 			 "status": "hash mismatch"
 		}
 	}
+
+Environment variables
+---------------------
+
+This program consumes the following variables.
+
+* MQTT_HOST
+
+  xxxx.azure-devices.net
+
+* MQTT_PORT
+
+  usually 8883
+
+* MQTT_CAFILE
+
+  path to the pem file for MQTT TLS
+
+* DEVICEID, USERNAME, PASSWORD
+
+  See https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-mqtt-support#using-the-mqtt-protocol-directly-as-a-device
+  and https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-security#security-tokens
