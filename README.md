@@ -53,3 +53,12 @@ This program consumes the following variables.
 
   See https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-mqtt-support#using-the-mqtt-protocol-directly-as-a-device
   and https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-security#security-tokens
+
+Dependencies
+------------
+
+* Mosquitto
+* libcurl
+* OpenSSL
+* https://github.com/kgabis/parson (This repo has a copy)
+* BSD queue.h (This repo has a copy)
