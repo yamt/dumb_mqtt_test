@@ -152,7 +152,7 @@ parse_patch_payload(const char *payload0, size_t payloadlen)
 	json_value_free(root);
 	return 0;
 
-      bail:
+bail:
 	json_value_free(root);
 	return 1;
 }
@@ -309,7 +309,7 @@ get_done(request_id_t id, void *_unused, void *payload)
 	dump_global();
 	return;
 
-      bail:
+bail:
 	errx(1, "unexpected json: %s", payload);
 }
 
