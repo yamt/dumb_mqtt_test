@@ -357,6 +357,9 @@ reconcile()
 	const char *ver = json_object_get_string(desired, verkey);
 	const char *curver = json_object_get_string(current, verkey);
 
+	void *buf = NULL;
+	FILE *fp = NULL;
+
 #if 0
 	if (desired == NULL) {
 		return;
@@ -386,7 +389,7 @@ reconcile()
 
 	// XXX the following process should be non-blocking
 	size_t bufsize = 10000;	// XXX
-	void *buf = malloc(bufsize);
+	buf = malloc(bufsize);
 	if (buf == NULL) {
 		err(1, "malloc");
 	}
@@ -401,10 +404,9 @@ reconcile()
 	if (new == NULL) {
 		err(1, "malloc");
 	}
-	FILE *fp = fmemopen(buf, bufsize, "w");
+	fp = fmemopen(buf, bufsize, "w");
 	if (fetch(url, NULL, fp)) {
 		warnx("fetch failure");
-		fclose(fp);
 		fill_obj(new, NULL, "fetch failed");
 		goto report;
 	}
@@ -423,7 +425,6 @@ reconcile()
 	}
 	printf("computed hash: %s\n", hashstr);
 	if (strcmp(hashstr, sha256)) {
-		fclose(fp);
 		printf("hash mismatch: %s != %s\n", hashstr, sha256);
 		fill_obj(new, NULL, "hash mismatch");
 		goto report;
@@ -432,14 +433,18 @@ reconcile()
 	printf("hash is ok\n");
 
 	// XXX do something meaningful with the downloaded blob
-	fclose(fp);
 
 	// report success
 	fill_obj(new, ver, "ok");
 report:
+	if (fp) {
+		fclose(fp);
+	}
+	if (buf) {
+		free(buf);
+	}
 	json_object_set_value(json_value_get_object(global.current), key, new);
 	dump_global();
-	return;
 }
 
 void
