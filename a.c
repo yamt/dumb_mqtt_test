@@ -410,10 +410,11 @@ reconcile()
 	}
 	unsigned char hash[32];
 	char hashstr[32 * 2 + 1];
-	printf("downloaded successfully\n");
+	size_t size = ftell(fp);
+	printf("downloaded %zu bytes successfully\n", size);
 	SHA256_CTX c;
 	SHA256_Init(&c);
-	SHA256_Update(&c, buf, ftell(fp));
+	SHA256_Update(&c, buf, size);
 	SHA256_Final(hash, &c);
 
 	int i;
