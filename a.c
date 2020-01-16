@@ -11,7 +11,7 @@
 #include "req.h"
 #include "fetcher.h"
 
-#define	REPORT_INTERVAL	5	// in seconds
+#define	REPORT_INTERVAL	10	// in seconds
 
 struct global {
 	JSON_Value *desired;
