@@ -353,7 +353,7 @@ reconcile()
 	    json_serialize_to_string_pretty(json_object_get_wrapping_value
 	    (desired));
 	printf("reconcile to: %s\n", p);
-	free(p);
+	json_free_serialized_string(p);
 #endif
 
 	if (ver == NULL) {
