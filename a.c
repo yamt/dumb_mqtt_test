@@ -322,6 +322,17 @@ bail:
 }
 
 static void
+fill_obj(JSON_Value *value, const char *version, const char *status)
+{
+	const char *verkey = "version";
+	const char *statuskey = "status";
+
+	JSON_Object *obj = json_value_get_object(value);
+	json_object_set_string(obj, verkey, version);
+	json_object_set_string(obj, statuskey, status);
+}
+
+static void
 reconcile()
 {
 	/*
@@ -337,7 +348,6 @@ reconcile()
 	const char *verkey = "version";
 	const char *urlkey = "url";
 	const char *sha256key = "sha256";
-	const char *statuskey = "status";
 
 	JSON_Object *desiredobj = json_value_get_object(global.desired);
 	JSON_Object *currentobj = json_value_get_object(global.current);
@@ -381,7 +391,6 @@ reconcile()
 		err(1, "malloc");
 	}
 	JSON_Value *new;
-	JSON_Object *newobj;
 	if (current == NULL) {
 		new = json_value_init_object();
 	} else {
@@ -392,12 +401,11 @@ reconcile()
 	if (new == NULL) {
 		err(1, "malloc");
 	}
-	newobj = json_value_get_object(new);
 	FILE *fp = fmemopen(buf, bufsize, "w");
 	if (fetch(url, NULL, fp)) {
 		warnx("fetch failure");
 		fclose(fp);
-		json_object_set_string(newobj, statuskey, "fetch failed");
+		fill_obj(new, NULL, "fetch failed");
 		goto report;
 	}
 	unsigned char hash[32];
@@ -416,7 +424,7 @@ reconcile()
 	if (strcmp(hashstr, sha256)) {
 		fclose(fp);
 		printf("hash mismatch: %s != %s\n", hashstr, sha256);
-		json_object_set_string(newobj, statuskey, "hash mismatch");
+		fill_obj(new, NULL, "hash mismatch");
 		goto report;
 	}
 
@@ -426,18 +434,26 @@ reconcile()
 	fclose(fp);
 
 	// report success
-	json_object_set_string(newobj, verkey, ver);
-	json_object_set_string(newobj, statuskey, "ok");
+	fill_obj(new, ver, "ok");
 report:
-	if (global.current == NULL) {
-		global.current = json_value_init_object();
-		if (global.current == NULL) {
-			errx(1, "json_value_init_object");
-		}
-	}
 	json_object_set_value(json_value_get_object(global.current), key, new);
 	dump_global();
 	return;
+}
+
+void
+init_global()
+{
+	global.current = json_value_init_object();
+	if (global.current == NULL) {
+		errx(1, "json_value_init_object");
+	}
+
+	const char *key = "test";
+	const char *version = "initial dummy version"; // XXX
+	JSON_Value *new = json_value_init_object();
+	fill_obj(new, version, "unknown");
+	json_object_set_value(json_value_get_object(global.current), key, new);
 }
 
 int
@@ -450,6 +466,8 @@ main(int argc, char **argv)
 	const char *deviceid = xgetenv("DEVICEID");
 	const char *username = xgetenv("USERNAME");
 	const char *password = xgetenv("PASSWORD");
+
+	init_global();
 
 	struct mosquitto *m;
 	int rc;
