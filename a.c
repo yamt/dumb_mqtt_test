@@ -11,6 +11,8 @@
 #include "req.h"
 #include "fetcher.h"
 
+#define	REPORT_INTERVAL	5	// in seconds
+
 struct global {
 	JSON_Value *desired;
 	JSON_Value *reported;
@@ -252,7 +254,7 @@ periodic_report(struct mosquitto *m)
 		last_report = time(NULL);
 	}
 	time_t now = time(NULL);
-	if (now - last_report < 5) {
+	if (now - last_report < REPORT_INTERVAL) {
 		return;
 	}
 	last_report = now;
