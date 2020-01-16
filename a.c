@@ -166,7 +166,7 @@ static void
 on_message(struct mosquitto *m, void *v, const struct mosquitto_message *msg)
 {
 	printf("on_message, topic='%s', qos=%d, payload='%.*s'\n", msg->topic,
-	    msg->qos, msg->payloadlen, msg->payload);
+	    msg->qos, msg->payloadlen, (const char *)msg->payload);
 
 	// GET response
 	// on_message, topic='$iothub/twin/res/200/?$rid=hey', qos=0, payload='{"desired":{"myUselessProperty":"Happy New Year 2020!","$version":15},"reported":{"uselessReportedValue":1034,"$version":89}}'
@@ -318,7 +318,7 @@ get_done(request_id_t id, void *_unused, void *payload)
 	return;
 
 bail:
-	errx(1, "unexpected json: %s", payload);
+	errx(1, "unexpected json: %s", (const char *)payload);
 }
 
 static void
