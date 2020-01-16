@@ -357,7 +357,7 @@ reconcile()
 	const char *ver = json_object_get_string(desired, verkey);
 	const char *curver = json_object_get_string(current, verkey);
 
-	void *buf = NULL;
+	char *buf = NULL;
 	FILE *fp = NULL;
 
 #if 0
@@ -388,11 +388,6 @@ reconcile()
 	printf("sha256: %s\n", sha256);
 
 	// XXX the following process should be non-blocking
-	size_t bufsize = 10000;	// XXX
-	buf = malloc(bufsize);
-	if (buf == NULL) {
-		err(1, "malloc");
-	}
 	JSON_Value *new;
 	if (current == NULL) {
 		new = json_value_init_object();
@@ -404,7 +399,11 @@ reconcile()
 	if (new == NULL) {
 		err(1, "malloc");
 	}
-	fp = fmemopen(buf, bufsize, "w");
+	size_t size;
+	fp = open_memstream(&buf, &size);
+	if (fp == NULL) {
+		errx(1, "open_memstream");
+	}
 	if (fetch(url, NULL, fp)) {
 		warnx("fetch failure");
 		fill_obj(new, NULL, "fetch failed");
@@ -412,7 +411,8 @@ reconcile()
 	}
 	unsigned char hash[32];
 	char hashstr[32 * 2 + 1];
-	size_t size = ftell(fp);
+	fclose(fp);
+	fp = NULL;
 	printf("downloaded %zu bytes successfully\n", size);
 	SHA256_CTX c;
 	SHA256_Init(&c);
