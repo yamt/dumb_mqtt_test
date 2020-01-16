@@ -62,3 +62,8 @@ Dependencies
 * OpenSSL
 * https://github.com/kgabis/parson (This repo has a copy)
 * BSD queue.h (This repo has a copy)
+
+In case of ubuntu/bionic:
+
+	apt-get install -y libmosquitto-dev libcurl4-openssl-dev libssl-dev
+
