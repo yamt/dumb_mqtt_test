@@ -485,8 +485,13 @@ main(int argc, char **argv)
 	if (rc != MOSQ_ERR_SUCCESS) {
 		errx(1, "mosquitto_username_pw_set failed");
 	}
+#if 0	// use mosquitto_opts_set for now as mosquitto_int_option is too new
 	rc = mosquitto_int_option(m, MOSQ_OPT_PROTOCOL_VERSION,
 	    MQTT_PROTOCOL_V311);
+#else
+	int v = MQTT_PROTOCOL_V311;
+	rc = mosquitto_opts_set(m, MOSQ_OPT_PROTOCOL_VERSION, &v);
+#endif
 	if (rc != MOSQ_ERR_SUCCESS) {
 		errx(1,
 		    "mosquitto_int_option MOSQ_OPT_PROTOCOL_VERSION failed");
