@@ -322,7 +322,7 @@ bail:
 }
 
 static void
-fill_obj(JSON_Value *value, const char *version, const char *status)
+fill_obj(JSON_Value * value, const char *version, const char *status)
 {
 	const char *verkey = "version";
 	const char *statuskey = "status";
@@ -450,7 +450,7 @@ init_global()
 	}
 
 	const char *key = "test";
-	const char *version = "initial dummy version"; // XXX
+	const char *version = "initial dummy version";	// XXX
 	JSON_Value *new = json_value_init_object();
 	fill_obj(new, version, "unknown");
 	json_object_set_value(json_value_get_object(global.current), key, new);
