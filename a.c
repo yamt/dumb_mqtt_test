@@ -1,4 +1,5 @@
 #include <err.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -240,10 +241,6 @@ xgetenv_int(const char *name)
 static void
 periodic_report(struct mosquitto *m)
 {
-	char topic[1024];	// XXX
-	int mid;
-	int rc;
-
 	static time_t last_report;
 
 	if (global.current == NULL) {
@@ -259,22 +256,13 @@ periodic_report(struct mosquitto *m)
 	}
 	last_report = now;
 
-	struct request *req = request_alloc();
-	request_insert(req);
 	// https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-mqtt-support#update-device-twins-reported-properties
-	snprintf(topic, sizeof(topic),
-	    "$iothub/twin/PATCH/properties/reported/?$rid=%llu", req->id);
-	// XXX check snprintf failure
-
+	struct request *req = request_alloc();
+	req->topic_template = "$iothub/twin/PATCH/properties/reported/?$rid=%llu";
 	char *payload = json_serialize_to_string(global.current);
-	size_t payloadlen = strlen(payload);
-	printf("report topic=%s, payload=%s\n", topic, payload);
-	rc = mosquitto_publish(m, &mid, topic, payloadlen, payload, 0, false);
-	json_free_serialized_string(payload);
-	if (rc != MOSQ_ERR_SUCCESS) {
-		errx(1, "mosquitto_publish failed");
-	}
-	printf("(report) mosquitto_publish mid=%d\n", mid);
+	req->payload = payload;
+	req->payload_free = json_free_serialized_string;
+	request_insert(req);
 }
 
 static void
@@ -535,16 +523,9 @@ main(int argc, char **argv)
 	// XXX should we wait for SUBACKs before sending the following GET request?
 	// https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-mqtt-support#retrieving-a-device-twins-properties
 	struct request *req = request_alloc();
+	req->topic_template = "$iothub/twin/GET/?$rid=%llu";
 	req->callback = get_done;
 	request_insert(req);
-	char topic[1024];	// XXX
-	snprintf(topic, sizeof(topic), "$iothub/twin/GET/?$rid=%llu", req->id);
-	// XXX check snprintf failure
-	rc = mosquitto_publish(m, &mid, topic, 0, "", 0, false);
-	if (rc != MOSQ_ERR_SUCCESS) {
-		errx(1, "mosquitto_publish failed");
-	}
-	printf("mosquitto_publish mid=%d\n", mid);
 
 	for (;;) {
 		rc = mosquitto_loop(m, -1, 1);
@@ -554,6 +535,7 @@ main(int argc, char **argv)
 		}
 		reconcile();
 		periodic_report(m);
+		resend_requests(m);
 	}
 
 	errx(1, "should not reach here");
