@@ -49,10 +49,20 @@ This program consumes the following variables.
 
   path to the pem file for MQTT TLS
 
-* DEVICEID, USERNAME, PASSWORD
+* DEVICEID, USERNAME
+
+  See https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-mqtt-support#using-the-mqtt-protocol-directly-as-a-device
+
+* PASSWORD
+
+  a SAS token
 
   See https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-mqtt-support#using-the-mqtt-protocol-directly-as-a-device
   and https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-security#security-tokens
+
+* MQTT_CLIENT_CERT_FILE, MQTT_CLIENT_KEY_FILE
+
+  client cert and key files
 
 Dependencies
 ------------
