@@ -166,7 +166,7 @@ static void
 on_message(struct mosquitto *m, void *v, const struct mosquitto_message *msg)
 {
 	printf("on_message, topic='%s', qos=%d, payload='%.*s'\n", msg->topic,
-	    msg->qos, msg->payloadlen, (const char *)msg->payload);
+	    msg->qos, msg->payloadlen, (const char *) msg->payload);
 
 	// GET response
 	// on_message, topic='$iothub/twin/res/200/?$rid=hey', qos=0, payload='{"desired":{"myUselessProperty":"Happy New Year 2020!","$version":15},"reported":{"uselessReportedValue":1034,"$version":89}}'
@@ -318,7 +318,7 @@ get_done(request_id_t id, void *_unused, void *payload)
 	return;
 
 bail:
-	errx(1, "unexpected json: %s", (const char *)payload);
+	errx(1, "unexpected json: %s", (const char *) payload);
 }
 
 static void
@@ -471,7 +471,13 @@ main(int argc, char **argv)
 	const char *cafile = xgetenv("MQTT_CAFILE");
 	const char *deviceid = xgetenv("DEVICEID");
 	const char *username = xgetenv("USERNAME");
-	const char *password = xgetenv("PASSWORD");
+	const char *password = getenv("PASSWORD");
+	const char *client_cert_file = getenv("MQTT_CLIENT_CERT_FILE");
+	const char *client_key_file = NULL;
+
+	if (client_cert_file != NULL) {
+		client_key_file = xgetenv("MQTT_CLIENT_KEY_FILE");
+	}
 
 	init_global();
 
@@ -483,7 +489,8 @@ main(int argc, char **argv)
 	if (m == NULL) {
 		err(1, "mosquitto_new failed");
 	}
-	rc = mosquitto_tls_set(m, cafile, NULL, NULL, NULL, NULL);
+	rc = mosquitto_tls_set(m, cafile, NULL, client_cert_file,
+	    client_key_file, NULL);
 	if (rc != MOSQ_ERR_SUCCESS) {
 		errx(1, "mosquitto_tls_set failed");
 	}
@@ -491,7 +498,7 @@ main(int argc, char **argv)
 	if (rc != MOSQ_ERR_SUCCESS) {
 		errx(1, "mosquitto_username_pw_set failed");
 	}
-#if 0	// use mosquitto_opts_set for now as mosquitto_int_option is too new
+#if 0				// use mosquitto_opts_set for now as mosquitto_int_option is too new
 	rc = mosquitto_int_option(m, MOSQ_OPT_PROTOCOL_VERSION,
 	    MQTT_PROTOCOL_V311);
 #else
