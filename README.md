@@ -68,10 +68,10 @@ This program consumes the following variables.
 
 # Dependencies
 
-* Mosquitto
-* libcurl
-* OpenSSL
-* https://github.com/kgabis/parson (This repo has a copy)
+* Mosquitto for MQTT
+* libcurl for HTTP
+* OpenSSL for SHA256 (And, depending on the config of the above two, for TLS)
+* https://github.com/kgabis/parson for JSON (This repo has a copy)
 * BSD queue.h (This repo has a copy)
 
 In case of ubuntu/bionic:
