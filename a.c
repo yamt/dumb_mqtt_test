@@ -243,10 +243,6 @@ periodic_report(struct mosquitto *m)
 {
 	static time_t last_report;
 
-	if (global.current == NULL) {
-		return;
-	}
-
 	if (!last_report) {
 		last_report = time(NULL);
 	}
