@@ -38,7 +38,7 @@ void
 request_free(struct request *req)
 {
 	if (req->payload_free) {
-		req->payload_free((void *)req->payload);
+		req->payload_free((void *) req->payload);
 	}
 	free(req);
 }
@@ -76,11 +76,13 @@ request_send(struct mosquitto *m, struct request *req)
 	snprintf(topic, sizeof(topic), req->topic_template, req->id);
 
 	size_t payloadlen = strlen(req->payload);
-	rc = mosquitto_publish(m, &mid, topic, payloadlen, req->payload, 0, false);
+	rc = mosquitto_publish(m, &mid, topic, payloadlen, req->payload, 0,
+	    false);
 	if (rc != MOSQ_ERR_SUCCESS) {
 		errx(1, "mosquitto_publish failed");
 	}
-	printf("%s mid=%d, topic=%s, payload=%s\n", (req->when == 0) ? "SEND" : "RESEND", mid, topic, req->payload);
+	printf("%s mid=%d, topic=%s, payload=%s\n",
+	    (req->when == 0) ? "SEND" : "RESEND", mid, topic, req->payload);
 }
 
 void

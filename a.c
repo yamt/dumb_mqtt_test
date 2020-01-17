@@ -256,7 +256,8 @@ periodic_report(struct mosquitto *m)
 
 	// https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-mqtt-support#update-device-twins-reported-properties
 	struct request *req = request_alloc();
-	req->topic_template = "$iothub/twin/PATCH/properties/reported/?$rid=%llu";
+	req->topic_template =
+	    "$iothub/twin/PATCH/properties/reported/?$rid=%llu";
 	char *payload = json_serialize_to_string(global.current);
 	req->payload = payload;
 	req->payload_free = json_free_serialized_string;
