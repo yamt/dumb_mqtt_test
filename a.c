@@ -516,6 +516,7 @@ main(int argc, char **argv)
 	mosquitto_message_callback_set(m, on_message);
 	mosquitto_log_callback_set(m, on_log);
 
+	// https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-device-twins#device-reconnection-flow
 	rc = mosquitto_connect(m, host, port, 30);
 	if (rc != MOSQ_ERR_SUCCESS) {
 		errx(1, "mosquitto_connect failed");
