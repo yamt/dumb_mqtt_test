@@ -1,5 +1,4 @@
-What this does
---------------
+# What this does
 
 Connect to Azure via MQTT and watch the device twins.
 If someone put a "test" object like the following in the device twins,
@@ -32,8 +31,7 @@ Or, an error like the following.
 		}
 	}
 
-Environment variables
----------------------
+# Environment variables
 
 This program consumes the following variables.
 
@@ -64,8 +62,7 @@ This program consumes the following variables.
 
   client cert and key files
 
-Dependencies
-------------
+# Dependencies
 
 * Mosquitto
 * libcurl
