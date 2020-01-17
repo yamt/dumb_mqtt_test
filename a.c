@@ -533,6 +533,7 @@ main(int argc, char **argv)
 	}
 	printf("mosquitto_subscribe mid=%d\n", mid);
 
+	// XXX should we wait for SUBACKs before sending the following GET request?
 	// https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-mqtt-support#retrieving-a-device-twins-properties
 	request_id_t request_id = request_id_alloc();
 	struct request *req = request_alloc();
