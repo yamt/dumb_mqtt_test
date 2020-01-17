@@ -1,6 +1,8 @@
 
 #include <curl/curl.h>
 
+// XXX should be non-blocking.  maybe use curl_multi_XXX
+
 int
 fetch(const char *url, size_t (*callback)(char *, size_t, size_t,
 	void *), void *callback_data)
