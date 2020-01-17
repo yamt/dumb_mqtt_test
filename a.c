@@ -14,6 +14,12 @@
 
 #define	REPORT_INTERVAL	10	// in seconds
 
+void
+do_something_useful_with_the_downloaded_blob(const char *version,
+    const void *buf, size_t size)
+{
+}
+
 struct global {
 	JSON_Value *desired;
 	JSON_Value *reported;
@@ -417,7 +423,7 @@ reconcile()
 
 	printf("hash is ok\n");
 
-	// XXX do something meaningful with the downloaded blob
+	do_something_useful_with_the_downloaded_blob(ver, buf, size);
 
 	// report success
 	fill_obj(new, ver, "ok");
