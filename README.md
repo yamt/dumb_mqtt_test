@@ -51,12 +51,16 @@ This program consumes the following variables.
 
   See https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-mqtt-support#using-the-mqtt-protocol-directly-as-a-device
 
+## SAS token based authentication
+
 * PASSWORD
 
   a SAS token
 
   See https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-mqtt-support#using-the-mqtt-protocol-directly-as-a-device
   and https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-security#security-tokens
+
+## X.509 certificate based authentication
 
 * MQTT_CLIENT_CERT_FILE, MQTT_CLIENT_KEY_FILE
 
