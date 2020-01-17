@@ -252,6 +252,8 @@ periodic_report(struct mosquitto *m)
 	}
 	last_report = now;
 
+	// XXX cancel the previous report if it hasn't been acked yet
+
 	// https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-mqtt-support#update-device-twins-reported-properties
 	struct request *req = request_alloc();
 	req->topic_template = "$iothub/twin/PATCH/properties/reported/?$rid=%llu";
