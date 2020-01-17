@@ -259,13 +259,11 @@ periodic_report(struct mosquitto *m)
 	}
 	last_report = now;
 
-	request_id_t request_id = request_id_alloc();
 	struct request *req = request_alloc();
-	req->id = request_id;
 	request_insert(req);
 	// https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-mqtt-support#update-device-twins-reported-properties
 	snprintf(topic, sizeof(topic),
-	    "$iothub/twin/PATCH/properties/reported/?$rid=%llu", request_id);
+	    "$iothub/twin/PATCH/properties/reported/?$rid=%llu", req->id);
 	// XXX check snprintf failure
 
 	char *payload = json_serialize_to_string(global.current);
@@ -536,14 +534,11 @@ main(int argc, char **argv)
 
 	// XXX should we wait for SUBACKs before sending the following GET request?
 	// https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-mqtt-support#retrieving-a-device-twins-properties
-	request_id_t request_id = request_id_alloc();
 	struct request *req = request_alloc();
-	req->id = request_id;
 	req->callback = get_done;
 	request_insert(req);
 	char topic[1024];	// XXX
-	snprintf(topic, sizeof(topic), "$iothub/twin/GET/?$rid=%llu",
-	    request_id);
+	snprintf(topic, sizeof(topic), "$iothub/twin/GET/?$rid=%llu", req->id);
 	// XXX check snprintf failure
 	rc = mosquitto_publish(m, &mid, topic, 0, "", 0, false);
 	if (rc != MOSQ_ERR_SUCCESS) {

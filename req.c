@@ -20,6 +20,7 @@ request_alloc()
 {
 	struct request *req = malloc(sizeof(*req));
 
+	req->id = request_id_alloc();
 	req->callback = NULL;
 	req->callback_data = NULL;
 	return req;
